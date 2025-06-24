@@ -42,3 +42,21 @@ BookScape Explorer is a powerful data analytics app built with **Streamlit**, in
 ├── README.md # Project readme
 ├── requirements.txt # Python dependencies
 └── 📁 data/ # (Optional) for exports
+
+1. Save this content as `README.md` in your project folder.
+2. Add a `requirements.txt` with:
+   ```txt
+   streamlit
+   requests
+   mysql-connector-python
+   pandas
+
+🙋‍♀️ Author
+Humaira Fathima N
+📫 humaira2004super@gmail.com
+
+git clone https://github.com/your-username/bookscape-explorer.git
+cd bookscape-explorer
+
+python -m venv env
+source env/bin/activate  # or env\Scripts\activate on Windows
