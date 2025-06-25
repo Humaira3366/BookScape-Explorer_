@@ -1,6 +1,7 @@
 # BookScape-Explorer_
 
-![image](https://github.com/user-attachments/assets/c3b87e70-9486-4ed6-8bbe-2a463b9eb363)
+![image](https://github.com/user-attachments/assets/7076ac3d-5715-47aa-ac12-a4022dedfbca)
+
 
 
 # 📚 BookScape Explorer
