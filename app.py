@@ -8,8 +8,8 @@ import time
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': '1234',          # ✅ Updated
-    'database': 'sql_query'      # ✅ Updated
+    'password': '1234',         
+    'database': 'sql_query'      
 }
 
 # ------------------ FETCH BOOKS ------------------ #
@@ -140,3 +140,110 @@ if st.button("🚀 Fetch and Insert 1000 Books", key="fetch_button"):
                     st.markdown(f"**Author(s):** {book['book_authors']}")
                     st.markdown(f"**Year:** {book['year']}")
             st.balloons()
+
+# ------------------ DATA ANALYSIS SECTION ------------------ #
+# List of evaluation queries
+query_options = {
+    "1️⃣ Availability: eBooks vs Physical Books":
+        "SELECT isEbook, COUNT(*) AS count FROM api GROUP BY isEbook",
+        
+    "2️⃣ Publisher with Most Books":
+        "SELECT book_authors, COUNT(*) AS count FROM api GROUP BY book_authors ORDER BY count DESC LIMIT 1",
+        
+    "3️⃣ Publisher with Highest Average Rating":
+        "SELECT book_authors, AVG(averageRating) AS avg_rating FROM api GROUP BY book_authors ORDER BY avg_rating DESC LIMIT 1",
+        
+    "4️⃣ Top 5 Most Expensive Books":
+        "SELECT book_title, amount_retailPrice FROM api ORDER BY amount_retailPrice DESC LIMIT 5",
+        
+    "5️⃣ Books After 2010 with ≥500 Pages":
+        "SELECT book_title, pageCount, year FROM api WHERE year > '2010' AND pageCount >= 500",
+        
+    "6️⃣ Books With Discounts > 20%":
+        """
+        SELECT book_title, amount_listPrice, amount_retailPrice 
+        FROM api 
+        WHERE amount_listPrice > 0 
+          AND ((amount_listPrice - amount_retailPrice) / amount_listPrice) > 0.2
+        """,
+        
+    "7️⃣ Avg Page Count: eBooks vs Physical":
+        "SELECT isEbook, AVG(pageCount) AS avg_pages FROM api GROUP BY isEbook",
+        
+    "8️⃣ Top 3 Authors by Book Count":
+        "SELECT book_authors, COUNT(*) AS count FROM api GROUP BY book_authors ORDER BY count DESC LIMIT 3",
+        
+    "9️⃣ Publishers with >10 Books":
+        "SELECT book_authors, COUNT(*) AS count FROM api GROUP BY book_authors HAVING count > 10",
+        
+    "🔟 Avg Page Count per Category":
+        "SELECT categories, AVG(pageCount) AS avg_pages FROM api GROUP BY categories",
+        
+    "1️⃣1️⃣ Books with >3 Authors":
+        "SELECT * FROM api WHERE LENGTH(book_authors) - LENGTH(REPLACE(book_authors, ',', '')) + 1 > 3",
+        
+    "1️⃣2️⃣ Books with Ratings > Average":
+        "SELECT * FROM api WHERE ratingsCount > (SELECT AVG(ratingsCount) FROM api)",
+        
+    "1️⃣3️⃣ Same Author & Year (Multiple Books)":
+        "SELECT book_authors, year, COUNT(*) FROM api GROUP BY book_authors, year HAVING COUNT(*) > 1",
+        
+    "1️⃣4️⃣ Books with Keyword 'magic' in Title":
+        "SELECT * FROM api WHERE book_title LIKE '%magic%'",
+        
+    "1️⃣5️⃣ Year with Highest Avg Book Price":
+        "SELECT year, AVG(amount_retailPrice) AS avg_price FROM api GROUP BY year ORDER BY avg_price DESC LIMIT 1",
+        
+    "1️⃣6️⃣ Authors Published 3 Consecutive Years (Logic Needed)":  # placeholder
+        "SELECT 'Needs window function or Python logic' AS note",
+        
+    "1️⃣7️⃣ Same Author, Same Year, Different Publisher (Approximate)":
+        "SELECT book_authors, year, COUNT(*) FROM api GROUP BY book_authors, year HAVING COUNT(*) > 1",
+        
+    "1️⃣8️⃣ Avg Retail Price: eBooks vs Physical":
+        """
+        SELECT 
+            AVG(CASE WHEN isEbook = 1 THEN amount_retailPrice END) AS avg_ebook_price,
+            AVG(CASE WHEN isEbook = 0 THEN amount_retailPrice END) AS avg_physical_price
+        FROM api
+        """,
+        
+    "1️⃣9️⃣ Rating Outliers (2 SD Away)":
+        """
+        SELECT book_title, averageRating, ratingsCount
+        FROM api
+        WHERE averageRating > (SELECT AVG(averageRating) + 2 * STDDEV(averageRating) FROM api)
+           OR averageRating < (SELECT AVG(averageRating) - 2 * STDDEV(averageRating) FROM api)
+        """,
+        
+    "2️⃣0️⃣ Top Publisher by Avg Rating (Min 10 Books)":
+        """
+        SELECT book_authors, AVG(averageRating) AS avg_rating, COUNT(*) AS books
+        FROM api
+        GROUP BY book_authors
+        HAVING COUNT(*) > 10
+        ORDER BY avg_rating DESC
+        LIMIT 1
+        """
+}
+st.sidebar.markdown("### 🧠 Evaluation Metrics")
+selected_query_label = st.sidebar.selectbox("Choose a SQL Query:", list(query_options.keys()))
+run_query = st.sidebar.button("▶️ Run Query")
+
+
+# ------------------ MAIN AREA RESULT ------------------ #
+if run_query:  # ✅ only trigger if sidebar button is clicked
+    conn = mysql.connector.connect(**DB_CONFIG)
+    cursor = conn.cursor()
+    try:
+        cursor.execute(query_options[selected_query_label])
+        result = cursor.fetchall()
+        colnames = [i[0] for i in cursor.description]
+        df_query = pd.DataFrame(result, columns=colnames)
+        st.subheader("📊 Query Result")
+        st.dataframe(df_query)
+    except Exception as e:
+        st.error(f"❌ Error running query: {e}")
+    finally:
+        cursor.close()
+        conn.close()
